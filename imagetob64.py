@@ -23,8 +23,9 @@ regexp = re.compile("^!\[(.*)\]\((.*)\)$")
 
 class ImagePreprocessor(markdown.preprocessors.Preprocessor):
 
-    def __init__(self):
+    def __init__(self, args):
         assert(sys.version_info.major >= 3 and sys.version_info.minor >= 8)
+        super().__init__(args)
 
     def run(self, lines):
 
