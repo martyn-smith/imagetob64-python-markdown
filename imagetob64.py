@@ -10,16 +10,10 @@ Licensed under Public Domain Mark 1.0.
 See http://creativecommons.org/publicdomain/mark/1.0/
 """
 
-from sys import version
-import re
-import os
-import string
-import base64
+from base64 import b64encode
 import markdown
-
-# Defines our basic inline image
-IMG_EXPR = "<img class='%s' alt='%s' id='%s'" + \
-        " src='data:image/png;base64,%s'>"
+import re
+import sys
 
 # Base CSS template
 IMG_CSS = \
@@ -29,28 +23,21 @@ regexp = re.compile("^!\[(.*)\]\((.*)\)$")
 
 class ImagePreprocessor(markdown.preprocessors.Preprocessor):
 
+    def __init__(self):
+        assert(sys.version_info.major >= 3 and sys.version_info.minor >= 8)
+
     def run(self, lines):
-        """Parses the actual page"""
-        # Re-creates the entire page so we can parse in a multine env.
-        page = "\n".join(lines)
-        images = regexp.findall(page)
-        print("hello from ImagePreProcessor")
 
-        # No sense in doing the extra work
-        if not len(images):
-            return page.split("\n")
-
-        for i in images:
-            png = open(i[1], "rb")
-            data = png.read()
-            data = base64.b64encode(data)
-            png.close()
-            page = regexp.sub(IMG_EXPR %
-                    (data), page, 1)
-            pass # do stuff with page
-
-        # Make sure to resplit the lines
-        return page.split("\n")
+        def embed(line):
+            if im := regexp.match(line):
+                png = open(im[2], "rb")
+                data = png.read()
+                data = bytes.decode(b64encode(data), "utf-8")
+                png.close()
+                return (f"<img class='' alt='{im[1]}' id='{im[1]}' src='data:image/png;base64,{data}'>")
+            else:
+                return line
+        return [embed(l) for l in lines]
 
 class ImagePostprocessor(markdown.postprocessors.Postprocessor):
     """This post processor extension just allows us to further
